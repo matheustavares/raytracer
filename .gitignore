@@ -1,0 +1,5 @@
+*.o
+tags
+raytracer
+.MAKE-CFLAGS
+.MAKE-LDFLAGS
