@@ -20,8 +20,8 @@ struct entity {
 };
 
 struct entity scene[] = {
-	{.type=ENT_SPHERE, .u={.s={.center={.x=0, .y=0, .z=3}, .radius=.3}}, .color={.R=0, .G=0, .B=255}},
-	{.type=ENT_SPHERE, .u={.s={.center={.x=0.2, .y=0.2, .z=2}, .radius=.2}}, .color={.R=0, .G=255, .B=0}},
+	{.type=ENT_SPHERE, .u={.s={.center={.x=0, .y=0, .z=6}, .radius=1}}, .color={.R=0, .G=0, .B=255}},
+	{.type=ENT_SPHERE, .u={.s={.center={.x=0.2, .y=0.2, .z=.3}, .radius=.2}}, .color={.R=0, .G=255, .B=0}},
 };
 
 struct color background_color = {60, 60, 60};
@@ -95,7 +95,7 @@ void cast_ray(struct ray *r, struct color *c)
 }
 
 /*
- * Viewport is centered at 0, 0, 0 and directed towards positive z.
+ * Viewport is centered at 0, 0, 1 and directed towards positive z.
  */
 int main(int argc, char **argv)
 {
@@ -110,7 +110,12 @@ int main(int argc, char **argv)
 		for (int j = 0; j < W; j++) {
 			float x = -viewport_W/2 + j * (viewport_W / (W-1));
 			float y = viewport_H/2 - i * (viewport_H / (H-1));
+#ifdef CAN_PROJ_ORTO
 			struct ray r = ray_new(x, y, 0, 0, 0, 1);
+#else
+			struct ray r = ray_new(0, 0, 0, x, y, 1);
+#endif
+			r.dir = vec3_normalize(r.dir);
 			struct color *c = ppm_color(ppm, i, j);
 			cast_ray(&r, c);
 		}
