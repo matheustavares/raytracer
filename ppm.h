@@ -11,6 +11,13 @@ struct ppm {
 	struct color *img;
 };
 
+static inline void copy_color(struct color *to, struct color *from)
+{
+	to->R = from->R;
+	to->G = from->G;
+	to->B = from->B;
+}
+
 struct ppm *ppm_new(unsigned W, unsigned H);
 void ppm_destroy(struct ppm **ppm_ptr);
 

@@ -1,6 +1,6 @@
 CC ?= gcc
 CFLAGS := -Wall -O3 -Wno-unused-function $(CFLAGS)
-LDFLAGS ?=
+LDFLAGS := -lm
 
 MAIN = raytracer
 HEADERS = $(wildcard *.h lib/*.h)
@@ -10,7 +10,7 @@ OBJS_DIR = objs
 OBJS = $(addprefix $(OBJS_DIR)/,$(filter-out $(MAIN).o,$(SRCS:.c=.o)))
 
 $(MAIN): $(OBJS_DIR)/$(MAIN).o Makefile $(OBJS) $(HEADERS) .MAKE-LDFLAGS
-	$(CC) $(CFLAGS) $(OBJS) $< -o $@
+	$(CC) $(CFLAGS) $(OBJS) $< -o $@ $(LDFLAGS)
 
 $(OBJS_DIR)/%.o: %.c Makefile $(HEADERS) .MAKE-CFLAGS
 	@mkdir -p $(OBJS_DIR)/lib
