@@ -10,6 +10,10 @@ struct sphere {
 	float radius;
 };
 
+struct plane {
+	struct vec3 p0, normal;
+};
+
 struct light {
 	struct vec3 pos;
 	float intensity;
@@ -17,10 +21,12 @@ struct light {
 
 struct entity {
 	enum entity_type{
-		ENT_SPHERE
+		ENT_SPHERE,
+		ENT_PLANE,
 	} type;
 	union {
 		struct sphere s;
+		struct plane p;
 	} u;
 	struct color color;
 };
@@ -28,6 +34,7 @@ struct entity {
 struct entity scene[] = {
 	{.type=ENT_SPHERE, .u={.s={.center={.x=0, .y=0, .z=6}, .radius=1}}, .color={.R=0, .G=0, .B=255}},
 	{.type=ENT_SPHERE, .u={.s={.center={.x=0.2, .y=0.2, .z=.5}, .radius=.2}}, .color={.R=0, .G=255, .B=0}},
+	{.type=ENT_PLANE, .u={.p={.p0={.x=0, .y=-1, .z=0}, .normal={.x=0, .y=1, .z=0}}}, .color={.R=220, .G=160, .B=100}},
 };
 
 struct light lights[] = {
@@ -82,6 +89,20 @@ int ray_intersects_sphere(struct ray *r, struct sphere *s, struct intersection *
 	}
 }
 
+int ray_intersects_plane(struct ray *r, struct plane *p, struct intersection *it)
+{
+	float divisor = vec3_dot(r->dir, p->normal);
+	if (fabs(divisor) < 0.001)
+		return 0;
+	float dist = vec3_dot(vec3_sub(p->p0, r->pos), p->normal) / divisor;
+	if (dist < 0)
+		return 0;
+	it->dist = dist;
+	it->pos = vec3_add(r->pos, vec3_smul(r->dir, dist));
+	it->normal = p->normal;
+	return 1;
+}
+
 #define max(a, b) ({ \
 		typeof(a) _a = (a); \
 		typeof(b) _b = (b); \
@@ -114,17 +135,22 @@ void cast_ray(struct ray *r, struct color *c)
 	size_t entities = sizeof(scene) / sizeof(scene[0]);
 	for (int i = 0; i < entities; i++) {
 		struct intersection it;
+		int intersects;
 		switch (scene[i].type) {
 		case ENT_SPHERE:
-			if (!ray_intersects_sphere(r, &scene[i].u.s, &it))
-				continue;
-			if (it.dist < nearest.dist) {
-				nearest = it;
-				nearest_entity = &scene[i];
-			}
+			intersects = ray_intersects_sphere(r, &scene[i].u.s, &it);
+			break;
+		case ENT_PLANE:
+			intersects = ray_intersects_plane(r, &scene[i].u.p, &it);
 			break;
 		default:
 			die("unknown type %d", scene[i].type);
+		}
+		if (!intersects)
+			continue;
+		if (it.dist < nearest.dist) {
+			nearest = it;
+			nearest_entity = &scene[i];
 		}
 	}
 	if (nearest_entity) {
