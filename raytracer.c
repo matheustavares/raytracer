@@ -83,8 +83,7 @@ void cast_ray(struct ray *r, struct color *c)
 			}
 			break;
 		default:
-			fprintf(stderr, "unknown type %d\n", scene[i].type);
-			exit(1);
+			die("unknown type %d", scene[i].type);
 		}
 	}
 
