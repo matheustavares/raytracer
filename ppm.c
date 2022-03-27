@@ -42,5 +42,6 @@ void ppm_destroy(struct ppm **ppm_ptr)
 {
 	struct ppm *ppm = *ppm_ptr;
 	free(ppm->img);
+	free(ppm);
 	*ppm_ptr = NULL;
 }
