@@ -53,6 +53,7 @@ struct ray {
 struct intersection {
 	struct vec3 pos, normal;
 	float dist;
+	struct entity *entity;
 };
 
 /*
@@ -127,35 +128,42 @@ float illumination_intensity(struct vec3 pos, struct vec3 normal)
 	return ret > 1 ? 1 : ret;
 }
 
-void cast_ray(struct ray *r, struct color *c)
+int cast_ray(struct ray *r, struct intersection *nearest_inter)
 {
-	struct intersection nearest = {.dist=INFINITY};
-	struct entity *nearest_entity = NULL;
+	int ret = 0;
+	nearest_inter->dist = INFINITY;
 
-	size_t entities = sizeof(scene) / sizeof(scene[0]);
-	for (int i = 0; i < entities; i++) {
-		struct intersection it;
+	size_t nr_entities = sizeof(scene) / sizeof(scene[0]);
+	for (int i = 0; i < nr_entities; i++) {
 		int intersects;
+		struct intersection this_inter;
 		switch (scene[i].type) {
 		case ENT_SPHERE:
-			intersects = ray_intersects_sphere(r, &scene[i].u.s, &it);
+			intersects = ray_intersects_sphere(r, &scene[i].u.s, &this_inter);
 			break;
 		case ENT_PLANE:
-			intersects = ray_intersects_plane(r, &scene[i].u.p, &it);
+			intersects = ray_intersects_plane(r, &scene[i].u.p, &this_inter);
 			break;
 		default:
 			die("unknown type %d", scene[i].type);
 		}
 		if (!intersects)
 			continue;
-		if (it.dist < nearest.dist) {
-			nearest = it;
-			nearest_entity = &scene[i];
+		if (this_inter.dist < nearest_inter->dist) {
+			*nearest_inter = this_inter;
+			nearest_inter->entity = &scene[i];
+			ret = 1;
 		}
 	}
-	if (nearest_entity) {
-		float intensity = illumination_intensity(nearest.pos, nearest.normal);
-		copy_color(c, &nearest_entity->color);
+	return ret;
+}
+
+void cast_ray_and_color_pixel(struct ray *r, struct color *c)
+{
+	struct intersection inter;
+	if (cast_ray(r, &inter)) {
+		float intensity = illumination_intensity(inter.pos, inter.normal);
+		copy_color(c, &inter.entity->color);
 		set_color_intensity(c, intensity);
 	} else {
 		copy_color(c, &background_color);
@@ -185,7 +193,7 @@ int main(int argc, char **argv)
 #endif
 			r.dir = vec3_normalize(r.dir);
 			struct color *c = ppm_color(ppm, i, j);
-			cast_ray(&r, c);
+			cast_ray_and_color_pixel(&r, c);
 		}
 	}
 	ppm_write(ppm, stdout);
