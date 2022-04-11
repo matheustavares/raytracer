@@ -38,7 +38,7 @@ struct entity scene[] = {
 };
 
 struct light lights[] = {
-	{.pos={.x=.5, .y=.5, .z=-1}, .intensity=1},
+	{.pos={.x=3, .y=2, .z=-1}, .intensity=1},
 };
 
 struct color background_color = {60, 60, 60};
