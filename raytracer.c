@@ -176,7 +176,7 @@ void cast_ray_and_color_pixel(struct ray *r, struct color *c)
 int main(int argc, char **argv)
 {
 	float aspect_ratio = 16.0 / 9.0;
-	int W = 1024, H = W / aspect_ratio;
+	int W = 2048, H = W / aspect_ratio;
 
 	float viewport_W = 2.0;
 	float viewport_H = viewport_W / aspect_ratio;
