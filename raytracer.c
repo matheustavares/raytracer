@@ -93,7 +93,7 @@ int ray_intersects_sphere(struct ray *r, struct sphere *s, struct intersection *
 int ray_intersects_plane(struct ray *r, struct plane *p, struct intersection *it)
 {
 	float divisor = vec3_dot(r->dir, p->normal);
-	if (fabs(divisor) < 0.001)
+	if (divisor >= 0)
 		return 0;
 	float dist = vec3_dot(vec3_sub(p->p0, r->pos), p->normal) / divisor;
 	if (dist < 0)
@@ -110,28 +110,16 @@ int ray_intersects_plane(struct ray *r, struct plane *p, struct intersection *it
 		_a > _b ? _a : _b; \
 })
 
-float illumination_intensity(struct vec3 pos, struct vec3 normal)
-{
-	float ret = 0;
-	normal = vec3_normalize(normal);
-	size_t nr_lights = sizeof(lights) / sizeof(lights[0]);
-	for (int i = 0; i < nr_lights; i++) {
-		struct light *l = &lights[i];
-		/*
-		 * If the dot product is below zero it means the angle is
-		 * above 90°, so the light is hitting the back of the object.
-		 */
-		float illumination = max(0,
-			vec3_dot(vec3_normalize(vec3_sub(l->pos, pos)), normal));
-		ret += illumination * l->intensity;
-	}
-	return ret > 1 ? 1 : ret;
-}
-
-int cast_ray(struct ray *r, struct intersection *nearest_inter)
+/*
+ * Returns 1 if the ray intersect any scene object or 0 otherwise.  If
+ * `nearest_inter` is not NULL, the data for the nearest intersection is saved
+ * on it. Otherwise, the function returns early at the first intersection.
+ */
+int cast_ray(struct ray *r, float limit, struct intersection *nearest_inter)
 {
 	int ret = 0;
-	nearest_inter->dist = INFINITY;
+	if (nearest_inter)
+		nearest_inter->dist = INFINITY;
 
 	size_t nr_entities = sizeof(scene) / sizeof(scene[0]);
 	for (int i = 0; i < nr_entities; i++) {
@@ -147,8 +135,10 @@ int cast_ray(struct ray *r, struct intersection *nearest_inter)
 		default:
 			die("unknown type %d", scene[i].type);
 		}
-		if (!intersects)
+		if (!intersects || this_inter.dist > limit)
 			continue;
+		if (!nearest_inter)
+			return 1;
 		if (this_inter.dist < nearest_inter->dist) {
 			*nearest_inter = this_inter;
 			nearest_inter->entity = &scene[i];
@@ -158,10 +148,37 @@ int cast_ray(struct ray *r, struct intersection *nearest_inter)
 	return ret;
 }
 
+float illumination_intensity(struct vec3 pos, struct vec3 normal)
+{
+	float illumination = 0;
+	normal = vec3_normalize(normal);
+	size_t nr_lights = sizeof(lights) / sizeof(lights[0]);
+	for (int i = 0; i < nr_lights; i++) {
+		struct light *l = &lights[i];
+		float light_dist = vec3_norm(vec3_sub(l->pos, pos));
+
+		struct vec3 displaced_pos = vec3_add(pos, vec3_smul(normal, 1e-3));
+		struct vec3 dir = vec3_normalize(vec3_sub(l->pos, pos));
+		struct ray r = ray_new(displaced_pos.x, displaced_pos.y, displaced_pos.z, dir.x, dir.y, dir.z);
+
+		if (cast_ray(&r, light_dist, NULL))
+			continue;
+
+		/*
+		 * If the dot product is below zero it means the angle is
+		 * above 90°, so the light is hitting the back of the object.
+		 */
+		float this_illumination = max(0,
+			vec3_dot(vec3_normalize(vec3_sub(l->pos, pos)), normal));
+		illumination += this_illumination * l->intensity;
+	}
+	return illumination > 1 ? 1 : illumination;
+}
+
 void cast_ray_and_color_pixel(struct ray *r, struct color *c)
 {
 	struct intersection inter;
-	if (cast_ray(r, &inter)) {
+	if (cast_ray(r, INFINITY, &inter)) {
 		float intensity = illumination_intensity(inter.pos, inter.normal);
 		copy_color(c, &inter.entity->color);
 		set_color_intensity(c, intensity);
