@@ -148,9 +148,11 @@ int cast_ray(struct ray *r, float limit, struct intersection *nearest_inter)
 	return ret;
 }
 
+#define AMBIENT_ILLUMINATION 0.08
+
 float illumination_intensity(struct vec3 pos, struct vec3 normal)
 {
-	float illumination = 0;
+	float illumination = AMBIENT_ILLUMINATION;
 	normal = vec3_normalize(normal);
 	size_t nr_lights = sizeof(lights) / sizeof(lights[0]);
 	for (int i = 0; i < nr_lights; i++) {
