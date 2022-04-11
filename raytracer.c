@@ -64,7 +64,7 @@ struct intersection {
  */
 int ray_intersects_sphere(struct ray *r, struct sphere *s, struct intersection *it)
 {
-	/* Ray must originate outside the sphere */
+	/* Ray must originate outside the sphere. FIXME */
 	assert(vec3_norm(vec3_sub(s->center, r->pos)) > s->radius);
 
 	float d = vec3_dot(r->dir, vec3_sub(s->center, r->pos));
