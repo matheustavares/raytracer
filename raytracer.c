@@ -73,7 +73,7 @@ void color_pixel(struct color *c, struct vec3 pos, struct vec3 normal,
 
 		struct vec3 displaced_pos = vec3_add(pos, vec3_smul(normal, 1e-3));
 		struct vec3 dir = vec3_normalize(vec3_sub(l->pos, pos));
-		struct ray r = ray_new(displaced_pos.x, displaced_pos.y, displaced_pos.z, dir.x, dir.y, dir.z);
+		struct ray r = ray_new(displaced_pos, dir);
 
 		if (cast_ray(&r, light_dist, NULL))
 			continue;
@@ -139,11 +139,12 @@ int main(int argc, char **argv)
 				float y = rand_in(top_y, top_y + pixel_sz);
 
 #ifdef CAN_PROJ_ORTO
-				struct ray r = ray_new(x, y, 0, 0, 0, 1);
+				struct ray r = ray_new(vec3_new(x, y, 0),
+						       vec3_new(0, 0, 1));
 #else
-				struct ray r = ray_new(0, 0, 0, x, y, 1);
+				struct ray r = ray_new(vec3_new(0, 0, 0),
+						       vec3_new(x, y, 1));
 #endif
-				r.dir = vec3_normalize(r.dir);
 				cast_ray_and_color_pixel(&r, c);
 			}
 			copy_color(ppm_color(ppm, i, j),

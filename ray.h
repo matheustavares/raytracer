@@ -4,8 +4,11 @@ struct ray {
 	struct vec3 pos, dir;
 };
 
-#define ray_new(px, py, pz, dx, dy, dz) \
-	{.pos={.x=px, .y=py, .z=pz}, .dir={.x=dx, .y=dy, .z=dz}}
+static inline struct ray ray_new(struct vec3 pos, struct vec3 dir)
+{
+	struct ray r = {.pos=pos, .dir=vec3_normalize(dir)};
+	return r;
+}
 
 /* The intersection of a ray and an entity. */
 struct intersection {
