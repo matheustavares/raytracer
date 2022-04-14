@@ -150,9 +150,11 @@ int cast_ray(struct ray *r, float limit, struct intersection *nearest_inter)
 
 #define AMBIENT_ILLUMINATION 0.08
 
-float illumination_intensity(struct vec3 pos, struct vec3 normal)
+void color_pixel(struct color *c, struct vec3 pos, struct vec3 normal,
+		 struct vec3 view_dir)
 {
 	float illumination = AMBIENT_ILLUMINATION;
+	float specular = 0;
 	normal = vec3_normalize(normal);
 	size_t nr_lights = sizeof(lights) / sizeof(lights[0]);
 	for (int i = 0; i < nr_lights; i++) {
@@ -170,20 +172,31 @@ float illumination_intensity(struct vec3 pos, struct vec3 normal)
 		 * If the dot product is below zero it means the angle is
 		 * above 90°, so the light is hitting the back of the object.
 		 */
-		float this_illumination = max(0,
+		illumination += l->intensity * max(0,
 			vec3_dot(vec3_normalize(vec3_sub(l->pos, pos)), normal));
-		illumination += this_illumination * l->intensity;
+
+		/* Specular component */
+		float spec_light = vec3_dot(
+				vec3_normalize(vec3_reflect(vec3_smul(dir, -1), normal)),
+				vec3_normalize(view_dir));
+		spec_light = max(0, spec_light);
+		specular += powf(spec_light * l->intensity, 200);
 	}
-	return illumination > 1 ? 1 : illumination;
+	illumination = illumination > 1 ? 1 : illumination;
+	set_color_intensity(c, illumination);
+
+	specular = specular > 1 ? 1 : specular;
+	struct color spec_color = {255, 255, 255};
+	set_color_intensity(&spec_color, specular);
+	color_add(c, spec_color);
 }
 
 void cast_ray_and_color_pixel(struct ray *r, struct color *c)
 {
 	struct intersection inter;
 	if (cast_ray(r, INFINITY, &inter)) {
-		float intensity = illumination_intensity(inter.pos, inter.normal);
 		copy_color(c, &inter.entity->color);
-		set_color_intensity(c, intensity);
+		color_pixel(c, inter.pos, inter.normal, vec3_smul(r->dir, -1));
 	} else {
 		copy_color(c, &background_color);
 	}

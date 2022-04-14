@@ -27,6 +27,15 @@ static inline void set_color_intensity(struct color *c, float intensity)
 	c->B *= intensity;
 }
 
+#define add_and_clamp(a, b) ((int)(a) + (int)(b) > 255 ? 255 : (a) + (b))
+
+static inline void color_add(struct color *c1, struct color c2)
+{
+	c1->R = add_and_clamp(c1->R, c2.R);
+	c1->G = add_and_clamp(c1->G, c2.G);
+	c1->B = add_and_clamp(c1->B, c2.B);
+}
+
 struct ppm *ppm_new(unsigned W, unsigned H);
 void ppm_destroy(struct ppm **ppm_ptr);
 
