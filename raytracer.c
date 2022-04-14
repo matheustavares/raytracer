@@ -195,11 +195,17 @@ void cast_ray_and_color_pixel(struct ray *r, struct color *c)
 {
 	struct intersection inter;
 	if (cast_ray(r, INFINITY, &inter)) {
-		copy_color(c, &inter.entity->color);
+		copy_color(c, inter.entity->color);
 		color_pixel(c, inter.pos, inter.normal, vec3_smul(r->dir, -1));
 	} else {
-		copy_color(c, &background_color);
+		copy_color(c, background_color);
 	}
+}
+
+float rand_in(float a, float b)
+{
+	assert(a <= b);
+	return a + (((float)rand() / RAND_MAX) * (b - a));
 }
 
 /*
@@ -214,20 +220,30 @@ int main(int argc, char **argv)
 
 	float viewport_W = 2.0;
 	float viewport_H = viewport_W / aspect_ratio;
+	int NR_SAMPLES = 4;
+	float pixel_sz = viewport_W / W;
 
 	struct ppm *ppm = ppm_new(H, W);
 	for (int i = 0; i < H; i++) {
 		for (int j = 0; j < W; j++) {
-			float x = -viewport_W/2 + j * (viewport_W / W);
-			float y = viewport_H/2 - i * (viewport_H / H);
+			struct color samples[NR_SAMPLES];
+			float top_x = -viewport_W/2 + j * pixel_sz;
+			float top_y = viewport_H/2 - i * pixel_sz;
+			for (int s = 0; s < NR_SAMPLES; s++) {
+				struct color *c = &samples[s];
+				float x = rand_in(top_x, top_x + pixel_sz);
+				float y = rand_in(top_y, top_y + pixel_sz);
+
 #ifdef CAN_PROJ_ORTO
-			struct ray r = ray_new(x, y, 0, 0, 0, 1);
+				struct ray r = ray_new(x, y, 0, 0, 0, 1);
 #else
-			struct ray r = ray_new(0, 0, 0, x, y, 1);
+				struct ray r = ray_new(0, 0, 0, x, y, 1);
 #endif
-			r.dir = vec3_normalize(r.dir);
-			struct color *c = ppm_color(ppm, i, j);
-			cast_ray_and_color_pixel(&r, c);
+				r.dir = vec3_normalize(r.dir);
+				cast_ray_and_color_pixel(&r, c);
+			}
+			copy_color(ppm_color(ppm, i, j),
+				   color_average(samples, NR_SAMPLES));
 		}
 	}
 	ppm_write(ppm, stdout);
