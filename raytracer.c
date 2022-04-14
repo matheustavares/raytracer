@@ -203,7 +203,9 @@ void cast_ray_and_color_pixel(struct ray *r, struct color *c)
 }
 
 /*
- * Viewport is centered at 0, 0, 1 and directed towards positive z.
+ * Viewport is centered at 0, 0, 1 and directed towards positive z. The left
+ * top corner of the image is the origin (0, 0), and the axis grow towards
+ * the right bottom corner.
  */
 int main(int argc, char **argv)
 {
@@ -216,8 +218,8 @@ int main(int argc, char **argv)
 	struct ppm *ppm = ppm_new(H, W);
 	for (int i = 0; i < H; i++) {
 		for (int j = 0; j < W; j++) {
-			float x = -viewport_W/2 + j * (viewport_W / (W-1));
-			float y = viewport_H/2 - i * (viewport_H / (H-1));
+			float x = -viewport_W/2 + j * (viewport_W / W);
+			float y = viewport_H/2 - i * (viewport_H / H);
 #ifdef CAN_PROJ_ORTO
 			struct ray r = ray_new(x, y, 0, 0, 0, 1);
 #else
