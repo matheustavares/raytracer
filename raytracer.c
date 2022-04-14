@@ -4,32 +4,9 @@
 #include "ppm.h"
 #include "vec3.h"
 #include "lib/error.h"
-
-struct sphere {
-	struct vec3 center;
-	float radius;
-};
-
-struct plane {
-	struct vec3 p0, normal;
-};
-
-struct light {
-	struct vec3 pos;
-	float intensity;
-};
-
-struct entity {
-	enum entity_type{
-		ENT_SPHERE,
-		ENT_PLANE,
-	} type;
-	union {
-		struct sphere s;
-		struct plane p;
-	} u;
-	struct color color;
-};
+#include "util.h"
+#include "entities/entities.h"
+#include "ray.h"
 
 struct entity scene[] = {
 	{.type=ENT_SPHERE, .u={.s={.center={.x=0, .y=0, .z=6}, .radius=1}}, .color={.R=0, .G=0, .B=255}},
@@ -42,73 +19,6 @@ struct light lights[] = {
 };
 
 struct color background_color = {60, 60, 60};
-
-struct ray {
-	struct vec3 pos, dir;
-};
-
-#define ray_new(px, py, pz, dx, dy, dz) \
-	{.pos={.x=px, .y=py, .z=pz}, .dir={.x=dx, .y=dy, .z=dz}}
-
-struct intersection {
-	struct vec3 pos, normal;
-	float dist;
-	struct entity *entity;
-};
-
-/*
- * Algorithm from:
- * http://www.lighthouse3d.com/tutorials/maths/ray-sphere-intersection/
- * Note: this function assumes that the ray does not originate inside the
- * sphere.
- */
-int ray_intersects_sphere(struct ray *r, struct sphere *s, struct intersection *it)
-{
-	/* Ray must originate outside the sphere. FIXME */
-	assert(vec3_norm(vec3_sub(s->center, r->pos)) > s->radius);
-
-	float d = vec3_dot(r->dir, vec3_sub(s->center, r->pos));
-	if (d > 0) {
-		struct vec3 proj = vec3_add(r->pos,
-				vec3_smul(r->dir, d / vec3_norm(r->dir)));
-		float dist = vec3_norm(vec3_sub(proj, s->center));
-		if (dist > s->radius)
-			return 0;
-		if (dist == s->radius) {
-			it->pos = proj;
-			it->dist = vec3_norm(vec3_sub(proj, r->pos));
-		} else {
-			float n = vec3_norm(vec3_sub(proj, s->center));
-			it->dist = vec3_norm(vec3_sub(proj, r->pos)) -
-					sqrt(s->radius * s->radius - n * n);
-			it->pos = vec3_add(r->pos, vec3_smul(r->dir, it->dist));
-		}
-		it->normal = vec3_normalize(vec3_sub(it->pos, s->center));
-		return 1;
-	} else {
-		return 0;
-	}
-}
-
-int ray_intersects_plane(struct ray *r, struct plane *p, struct intersection *it)
-{
-	float divisor = vec3_dot(r->dir, p->normal);
-	if (divisor >= 0)
-		return 0;
-	float dist = vec3_dot(vec3_sub(p->p0, r->pos), p->normal) / divisor;
-	if (dist < 0)
-		return 0;
-	it->dist = dist;
-	it->pos = vec3_add(r->pos, vec3_smul(r->dir, dist));
-	it->normal = p->normal;
-	return 1;
-}
-
-#define max(a, b) ({ \
-		typeof(a) _a = (a); \
-		typeof(b) _b = (b); \
-		_a > _b ? _a : _b; \
-})
 
 /*
  * Returns 1 if the ray intersect any scene object or 0 otherwise.  If
@@ -200,12 +110,6 @@ void cast_ray_and_color_pixel(struct ray *r, struct color *c)
 	} else {
 		copy_color(c, background_color);
 	}
-}
-
-float rand_in(float a, float b)
-{
-	assert(a <= b);
-	return a + (((float)rand() / RAND_MAX) * (b - a));
 }
 
 /*
