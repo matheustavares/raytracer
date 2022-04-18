@@ -26,7 +26,7 @@ struct entity {
 		struct sphere s;
 		struct plane p;
 	} u;
-	struct color color;
+	struct vec3 color;
 };
 
 int ray_intersects_sphere(struct ray *r, struct sphere *s, struct intersection *it);

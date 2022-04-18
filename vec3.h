@@ -5,7 +5,7 @@ struct vec3 {
 	float x, y, z;
 };
 
-#define vec3_new(vx, vy, vz) (struct vec3){.x=(vx), .y=(vy), .z=(vz)}
+#define vec3_new(vx, vy, vz) ((struct vec3){.x=(vx), .y=(vy), .z=(vz)})
 
 static inline struct vec3 vec3_add(struct vec3 v, struct vec3 u)
 {
@@ -46,4 +46,9 @@ static inline struct vec3 vec3_reflect(struct vec3 d, struct vec3 n)
 {
 	n = vec3_normalize(n);
 	return vec3_sub(d, vec3_smul(n, 2 * vec3_dot(d, n)));
+}
+
+static inline struct vec3 vec3_map(struct vec3 v, float (*map_fn)(float f))
+{
+	return vec3_new(map_fn(v.x), map_fn(v.y), map_fn(v.z));
 }

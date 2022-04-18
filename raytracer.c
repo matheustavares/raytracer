@@ -9,16 +9,16 @@
 #include "ray.h"
 
 struct entity scene[] = {
-	{.type=ENT_SPHERE, .u={.s={.center={.x=0, .y=0, .z=6}, .radius=1}}, .color={.R=0, .G=0, .B=255}},
-	{.type=ENT_SPHERE, .u={.s={.center={.x=0.2, .y=0.2, .z=.5}, .radius=.2}}, .color={.R=0, .G=255, .B=0}},
-	{.type=ENT_PLANE, .u={.p={.p0={.x=0, .y=-1, .z=0}, .normal={.x=0, .y=1, .z=0}}}, .color={.R=220, .G=160, .B=100}},
+	{.type=ENT_SPHERE, .u={.s={.center={.x=0, .y=0, .z=6}, .radius=1}}, .color={0, 0, 1}},
+	{.type=ENT_SPHERE, .u={.s={.center={.x=0.2, .y=0.2, .z=.5}, .radius=.2}}, .color={0, 1, 0}},
+	{.type=ENT_PLANE, .u={.p={.p0={.x=0, .y=-1, .z=0}, .normal={.x=0, .y=1, .z=0}}}, .color={0.977, 0.627, 0.392}},
 };
 
 struct light lights[] = {
 	{.pos={.x=3, .y=2, .z=-1}, .intensity=1},
 };
 
-struct color background_color = {60, 60, 60};
+struct vec3 background_color = {.24, .24, .24};
 
 /*
  * Returns 1 if the ray intersect any scene object or 0 otherwise.  If
@@ -60,7 +60,7 @@ int cast_ray(struct ray *r, float limit, struct intersection *nearest_inter)
 
 #define AMBIENT_ILLUMINATION 0.08
 
-void color_pixel(struct color *c, struct vec3 pos, struct vec3 normal,
+void color_pixel(struct vec3 *color, struct vec3 pos, struct vec3 normal,
 		 struct vec3 view_dir)
 {
 	float illumination = AMBIENT_ILLUMINATION;
@@ -93,22 +93,21 @@ void color_pixel(struct color *c, struct vec3 pos, struct vec3 normal,
 		specular += powf(spec_light * l->intensity, 200);
 	}
 	illumination = illumination > 1 ? 1 : illumination;
-	set_color_intensity(c, illumination);
+	*color = vec3_smul(*color, illumination);
 
 	specular = specular > 1 ? 1 : specular;
-	struct color spec_color = {255, 255, 255};
-	set_color_intensity(&spec_color, specular);
-	color_add(c, spec_color);
+	struct vec3 spec_color = {specular, specular, specular};
+	*color = vec3_add(*color, spec_color);
 }
 
-void cast_ray_and_color_pixel(struct ray *r, struct color *c)
+void cast_ray_and_color_pixel(struct ray *r, struct vec3 *color)
 {
 	struct intersection inter;
 	if (cast_ray(r, INFINITY, &inter)) {
-		copy_color(c, inter.entity->color);
-		color_pixel(c, inter.pos, inter.normal, vec3_smul(r->dir, -1));
+		*color = inter.entity->color;
+		color_pixel(color, inter.pos, inter.normal, vec3_smul(r->dir, -1));
 	} else {
-		copy_color(c, background_color);
+		*color = background_color;
 	}
 }
 
@@ -130,11 +129,11 @@ int main(int argc, char **argv)
 	struct ppm *ppm = ppm_new(H, W);
 	for (int i = 0; i < H; i++) {
 		for (int j = 0; j < W; j++) {
-			struct color samples[NR_SAMPLES];
+			struct vec3 samples[NR_SAMPLES];
 			float top_x = -viewport_W/2 + j * pixel_sz;
 			float top_y = viewport_H/2 - i * pixel_sz;
 			for (int s = 0; s < NR_SAMPLES; s++) {
-				struct color *c = &samples[s];
+				struct vec3 *color = &samples[s];
 				float x = rand_in(top_x, top_x + pixel_sz);
 				float y = rand_in(top_y, top_y + pixel_sz);
 
@@ -145,10 +144,9 @@ int main(int argc, char **argv)
 				struct ray r = ray_new(vec3_new(0, 0, 0),
 						       vec3_new(x, y, 1));
 #endif
-				cast_ray_and_color_pixel(&r, c);
+				cast_ray_and_color_pixel(&r, color);
 			}
-			copy_color(ppm_color(ppm, i, j),
-				   color_average(samples, NR_SAMPLES));
+			*ppm_color(ppm, i, j) = color_average(samples, NR_SAMPLES);
 		}
 	}
 	ppm_write(ppm, stdout);

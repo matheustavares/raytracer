@@ -2,6 +2,11 @@
 #include "lib/wrappers.h"
 #include "lib/error.h"
 
+static struct vec3 color_float_to_byte(struct vec3 color)
+{
+	return vec3_map(vec3_smul(clamp_color_vec(color), 255), roundf);
+}
+
 void ppm_write(struct ppm *ppm, FILE *f)
 {
 	fprintf(f, "P3\n");
@@ -9,9 +14,10 @@ void ppm_write(struct ppm *ppm, FILE *f)
 	fprintf(f, "255\n");
 	for (unsigned i = 0; i < ppm->rows; i++) {
 		for (unsigned j = 0; j < ppm->cols; j++) {
-			struct color *c = ppm_color(ppm, i, j);
 			char sep = j == ppm->cols - 1 ? '\n' : '\t';
-			fprintf(f, "%d %d %d%c", c->R, c->G, c->B, sep);
+			struct vec3 color = color_float_to_byte(*ppm_color(ppm, i, j));
+			fprintf(f, "%d %d %d%c", (int)color.x,
+				(int)color.y, (int)color.z, sep);
 		}
 	}
 }
@@ -33,7 +39,7 @@ unsigned ppm_2d_to_1d(struct ppm *ppm, unsigned i, unsigned j)
 	return i * ppm->cols + j;
 }
 
-struct color *ppm_color(struct ppm *ppm, unsigned i, unsigned j)
+struct vec3 *ppm_color(struct ppm *ppm, unsigned i, unsigned j)
 {
 	return &(ppm->img[ppm_2d_to_1d(ppm, i, j)]);
 }
