@@ -7,6 +7,7 @@
 #include "util.h"
 #include "entities/entities.h"
 #include "ray.h"
+#include "lib/array.h"
 
 struct entity scene[] = {
 	ENTITY_SPHERE(vec3_new(0, 0, 6), 1, vec3_new(0, 0, 1)),
@@ -31,8 +32,7 @@ int cast_ray(struct ray *r, float limit, struct intersection *nearest_inter)
 	if (nearest_inter)
 		nearest_inter->dist = INFINITY;
 
-	size_t nr_entities = sizeof(scene) / sizeof(scene[0]);
-	for (int i = 0; i < nr_entities; i++) {
+	for (int i = 0; i < ARRAY_SIZE(scene); i++) {
 		struct entity *e = &scene[i];
 		struct intersection this_inter;
 		if (!e->ray_intersects(r, e, &this_inter) || this_inter.dist > limit)
@@ -55,8 +55,7 @@ void color_pixel(struct vec3 *color, struct vec3 pos, struct vec3 normal,
 	float illumination = AMBIENT_ILLUMINATION;
 	float specular = 0;
 	normal = vec3_normalize(normal);
-	size_t nr_lights = sizeof(lights) / sizeof(lights[0]);
-	for (int i = 0; i < nr_lights; i++) {
+	for (int i = 0; i < ARRAY_SIZE(lights); i++) {
 		struct light *l = &lights[i];
 		float light_dist = vec3_norm(vec3_sub(l->pos, pos));
 
