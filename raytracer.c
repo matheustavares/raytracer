@@ -54,7 +54,7 @@ void color_pixel(struct vec3 *color, struct vec3 pos, struct vec3 normal,
 {
 	float illumination = AMBIENT_ILLUMINATION;
 	float specular = 0;
-	normal = vec3_normalize(normal);
+
 	for (int i = 0; i < ARRAY_SIZE(lights); i++) {
 		struct light *l = &lights[i];
 		float light_dist = vec3_norm(vec3_sub(l->pos, pos));
@@ -99,6 +99,15 @@ void cast_ray_and_color_pixel(struct ray *r, struct vec3 *color)
         }
 }
 
+static void ensure_unit_length_in_scene_normals(void)
+{
+	for (int i = 0; i < ARRAY_SIZE(scene); i++) {
+		struct entity *e = &scene[i];
+		if (e->type == ENT_PLANE)
+			vec3_normalize_inplace(e->u.p.normal);
+	}
+}
+
 /*
  * Viewport is centered at 0, 0, 1 and directed towards positive z. The left
  * top corner of the image is the origin (0, 0), and the axis grow towards
@@ -113,6 +122,8 @@ int main(int argc, char **argv)
 	float viewport_H = viewport_W / aspect_ratio;
 	int NR_SAMPLES = 4;
 	float pixel_sz = viewport_W / W;
+
+	ensure_unit_length_in_scene_normals();
 
 	struct ppm *ppm = ppm_new(H, W);
 	for (int i = 0; i < H; i++) {

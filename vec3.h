@@ -42,6 +42,10 @@ static inline struct vec3 vec3_normalize(struct vec3 v)
 	return vec3_sdiv(v, vec3_norm(v));
 }
 
+#define vec3_normalize_inplace(v) { \
+	(v) = vec3_normalize(v); \
+} while(0)
+
 static inline struct vec3 vec3_reflect(struct vec3 d, struct vec3 n)
 {
 	n = vec3_normalize(n);
