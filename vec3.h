@@ -48,7 +48,7 @@ static inline struct vec3 vec3_normalize(struct vec3 v)
 
 static inline struct vec3 vec3_reflect(struct vec3 d, struct vec3 n)
 {
-	n = vec3_normalize(n);
+	vec3_normalize_inplace(n);
 	return vec3_sub(d, vec3_smul(n, 2 * vec3_dot(d, n)));
 }
 
