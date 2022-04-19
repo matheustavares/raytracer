@@ -49,21 +49,21 @@ int cast_ray(struct ray *r, float limit, struct intersection *nearest_it)
 
 #define AMBIENT_ILLUMINATION 0.08
 
-void color_pixel(struct vec3 *color, struct vec3 pos, struct vec3 normal,
-		 struct vec3 view_dir)
+struct vec3 intersection_color(struct intersection *it, struct vec3 cam_dir)
 {
+	struct vec3 color = it->entity->color;
 	float illumination = AMBIENT_ILLUMINATION;
 	float specular = 0;
 
 	for (int i = 0; i < ARRAY_SIZE(lights); i++) {
 		struct light *l = &lights[i];
-		float light_dist = vec3_norm(vec3_sub(l->pos, pos));
+		float light_dist = vec3_norm(vec3_sub(l->pos, it->pos));
+		struct vec3 it_to_light_dir = vec3_normalize(vec3_sub(l->pos, it->pos));
 
-		struct vec3 displaced_pos = vec3_add(pos, vec3_smul(normal, 1e-3));
-		struct vec3 dir = vec3_normalize(vec3_sub(l->pos, pos));
-		struct ray r = ray_new(displaced_pos, dir);
-
-		if (cast_ray(&r, light_dist, NULL))
+		/* Shadow */
+		struct vec3 displaced_it_pos = vec3_add(it->pos, vec3_smul(it->normal, 1e-3));
+		struct ray shadow_ray = ray_new(displaced_it_pos, it_to_light_dir);
+		if (cast_ray(&shadow_ray, light_dist, NULL))
 			continue;
 
 		/*
@@ -71,32 +71,33 @@ void color_pixel(struct vec3 *color, struct vec3 pos, struct vec3 normal,
 		 * above 90°, so the light is hitting the back of the object.
 		 */
 		illumination += l->intensity * max(0,
-			vec3_dot(vec3_normalize(vec3_sub(l->pos, pos)), normal));
+			vec3_dot(vec3_normalize(vec3_sub(l->pos, it->pos)),
+				 it->normal));
 
 		/* Specular component */
 		float spec_light = vec3_dot(
-				vec3_normalize(vec3_reflect(vec3_smul(dir, -1), normal)),
-				vec3_normalize(view_dir));
+			vec3_normalize(vec3_reflect(vec3_smul(it_to_light_dir, -1), it->normal)),
+			vec3_normalize(cam_dir));
+
 		spec_light = max(0, spec_light);
 		specular += powf(spec_light * l->intensity, 200);
 	}
 	illumination = illumination > 1 ? 1 : illumination;
-	*color = vec3_smul(*color, illumination);
+	color = vec3_smul(color, illumination);
 
 	specular = specular > 1 ? 1 : specular;
 	struct vec3 spec_color = {specular, specular, specular};
-	*color = vec3_add(*color, spec_color);
+	color = vec3_add(color, spec_color);
+	return color;
 }
 
 void cast_ray_and_color_pixel(struct ray *r, struct vec3 *color)
 {
-        struct intersection it;
-        if (cast_ray(r, INFINITY, &it)) {
-                *color = it.entity->color;
-                color_pixel(color, it.pos, it.normal, vec3_smul(r->dir, -1));
-        } else {
-                *color = background_color;
-        }
+	struct intersection it;
+	if (cast_ray(r, INFINITY, &it))
+		*color = intersection_color(&it, vec3_smul(r->dir, -1));
+	else
+		*color = background_color;
 }
 
 static void ensure_unit_length_in_scene_normals(void)
