@@ -47,13 +47,13 @@ int cast_ray(struct ray *r, float limit, struct intersection *nearest_it)
 	return ret;
 }
 
-#define AMBIENT_ILLUMINATION 0.08
+#define AMBIENT_LIGHT_INTENSITY 0.08
 
 struct vec3 intersection_color(struct intersection *it, struct vec3 cam_dir)
 {
 	struct vec3 color = it->entity->color;
-	float illumination = AMBIENT_ILLUMINATION;
-	float specular = 0;
+	float diffuse_light_intensity = AMBIENT_LIGHT_INTENSITY;
+	float specular_light_intensity = 0;
 
 	for (int i = 0; i < ARRAY_SIZE(lights); i++) {
 		struct light *l = &lights[i];
@@ -70,24 +70,26 @@ struct vec3 intersection_color(struct intersection *it, struct vec3 cam_dir)
 		 * If the dot product is below zero it means the angle is
 		 * above 90°, so the light is hitting the back of the object.
 		 */
-		illumination += l->intensity * max(0,
+		diffuse_light_intensity += l->intensity * max(0,
 			vec3_dot(vec3_normalize(vec3_sub(l->pos, it->pos)),
 				 it->normal));
 
 		/* Specular component */
-		float spec_light = vec3_dot(
+		float specular_light_incidence = max(0, vec3_dot(
 			vec3_normalize(vec3_reflect(vec3_smul(it_to_light_dir, -1), it->normal)),
-			vec3_normalize(cam_dir));
+			vec3_normalize(cam_dir)));
 
-		spec_light = max(0, spec_light);
-		specular += powf(spec_light * l->intensity, 200);
+		specular_light_intensity += powf(specular_light_incidence * l->intensity, 200);
 	}
-	illumination = illumination > 1 ? 1 : illumination;
-	color = vec3_smul(color, illumination);
 
-	specular = specular > 1 ? 1 : specular;
-	struct vec3 spec_color = {specular, specular, specular};
-	color = vec3_add(color, spec_color);
+	diffuse_light_intensity = clamp_color(diffuse_light_intensity);
+	color = vec3_smul(color, diffuse_light_intensity);
+
+	specular_light_intensity = clamp_color(specular_light_intensity);
+	struct vec3 specular_color =
+			vec3_smul((struct vec3){1, 1, 1}, specular_light_intensity);
+	color = vec3_add(color, specular_color);
+
 	return color;
 }
 
