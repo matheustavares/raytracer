@@ -14,5 +14,6 @@ int ray_intersects_plane(struct ray *r, struct entity *e, struct intersection *i
 	it->dist = dist;
 	it->pos = vec3_add(r->pos, vec3_smul(r->dir, dist));
 	it->normal = p->normal;
+	it->entity = e;
 	return 1;
 }

@@ -32,6 +32,7 @@ int ray_intersects_sphere(struct ray *r, struct entity *e, struct intersection *
 			it->pos = vec3_add(r->pos, vec3_smul(r->dir, it->dist));
 		}
 		it->normal = vec3_normalize(vec3_sub(it->pos, s->center));
+		it->entity = e;
 		return 1;
 	} else {
 		return 0;

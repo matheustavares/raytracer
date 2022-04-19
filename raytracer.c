@@ -41,7 +41,6 @@ int cast_ray(struct ray *r, float limit, struct intersection *nearest_inter)
 			return 1;
 		if (this_inter.dist < nearest_inter->dist) {
 			*nearest_inter = this_inter;
-			nearest_inter->entity = &scene[i];
 			ret = 1;
 		}
 	}
