@@ -17,6 +17,18 @@ struct light {
 	float intensity;
 };
 
+struct material {
+	struct vec3 color;
+	float shininess;
+	float diffuse_constant, specular_constant;
+};
+
+#define MAT_GLOSSY(color_v) \
+	{.color=color_v, .diffuse_constant=1, \
+	 .specular_constant=1, .shininess=400}
+
+#define MAT_MATTE(color_v) {.color=color_v, .diffuse_constant=1}
+
 typedef int (*ray_intersection_fn)(struct ray *r, struct entity *e,
 				   struct intersection *it);
 
@@ -29,17 +41,17 @@ struct entity {
 		struct sphere s;
 		struct plane p;
 	} u;
-	struct vec3 color;
+	struct material material;
 	ray_intersection_fn ray_intersects;
 };
 
 int ray_intersects_sphere(struct ray *r, struct entity *e, struct intersection *it);
 int ray_intersects_plane(struct ray *r, struct entity *e, struct intersection *it);
 
-#define ENTITY_SPHERE(center_v, radius_v, color_v) \
+#define ENTITY_SPHERE(center_v, radius_v, material_v) \
 	{.type=ENT_SPHERE, .u={.s={.center=center_v, .radius=radius_v}}, \
-	 .color=color_v, .ray_intersects=ray_intersects_sphere}
+	 .material=material_v, .ray_intersects=ray_intersects_sphere}
 
-#define ENTITY_PLANE(p0_v, normal_v, color_v) \
+#define ENTITY_PLANE(p0_v, normal_v, material_v) \
 	{.type=ENT_PLANE, .u={.p={.p0=p0_v, .normal=normal_v}}, \
-	 .color=color_v, .ray_intersects=ray_intersects_plane}
+	 .material=material_v, .ray_intersects=ray_intersects_plane}

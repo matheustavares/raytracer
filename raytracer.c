@@ -10,9 +10,10 @@
 #include "lib/array.h"
 
 struct entity scene[] = {
-	ENTITY_SPHERE(vec3_new(0, 0, 6), 1, vec3_new(0, 0, 1)),
-	ENTITY_SPHERE(vec3_new(0.2, 0.2, .5), .2, vec3_new(0, 1, 0)),
-	ENTITY_PLANE(vec3_new(0, -1, 0), vec3_new(0, 1, 0), vec3_new(0.977, 0.627, 0.392)),
+	ENTITY_SPHERE(vec3_new(-3, 0, 6), 1, MAT_GLOSSY(vec3_new(0, .5, .5))),
+	ENTITY_SPHERE(vec3_new(0, 0, 6), 1, MAT_MATTE(vec3_new(0, 0, 1))),
+	ENTITY_SPHERE(vec3_new(0.2, 0.2, .5), .2, MAT_MATTE(vec3_new(0, 1, 0))),
+	ENTITY_PLANE(vec3_new(0, -1, 0), vec3_new(0, 1, 0), MAT_MATTE(vec3_new(0.977, 0.627, 0.392))),
 };
 
 struct light lights[] = {
@@ -51,9 +52,9 @@ int cast_ray(struct ray *r, float limit, struct intersection *nearest_it)
 
 struct vec3 intersection_color(struct intersection *it, struct vec3 cam_dir)
 {
-	struct vec3 color = it->entity->color;
 	float diffuse_light_intensity = AMBIENT_LIGHT_INTENSITY;
 	float specular_light_intensity = 0;
+	struct material *material = &it->entity->material;
 
 	for (int i = 0; i < ARRAY_SIZE(lights); i++) {
 		struct light *l = &lights[i];
@@ -79,18 +80,22 @@ struct vec3 intersection_color(struct intersection *it, struct vec3 cam_dir)
 			vec3_normalize(vec3_reflect(vec3_smul(it_to_light_dir, -1), it->normal)),
 			vec3_normalize(cam_dir)));
 
-		specular_light_intensity += powf(specular_light_incidence * l->intensity, 200);
+		specular_light_intensity +=
+			powf(specular_light_incidence * l->intensity,
+			     material->shininess);
 	}
 
 	diffuse_light_intensity = clamp_color(diffuse_light_intensity);
-	color = vec3_smul(color, diffuse_light_intensity);
+	struct vec3 diffuse_color = vec3_smul(material->color,
+					      diffuse_light_intensity *
+					      material->diffuse_constant);
 
 	specular_light_intensity = clamp_color(specular_light_intensity);
 	struct vec3 specular_color =
-			vec3_smul((struct vec3){1, 1, 1}, specular_light_intensity);
-	color = vec3_add(color, specular_color);
+		vec3_smul((struct vec3){1, 1, 1},
+			  specular_light_intensity * material->specular_constant);
 
-	return color;
+	return vec3_add(diffuse_color, specular_color);
 }
 
 void cast_ray_and_color_pixel(struct ray *r, struct vec3 *color)
