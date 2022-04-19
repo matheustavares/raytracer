@@ -7,8 +7,11 @@
  * Note: this function assumes that the ray does not originate inside the
  * sphere.
  */
-int ray_intersects_sphere(struct ray *r, struct sphere *s, struct intersection *it)
+int ray_intersects_sphere(struct ray *r, struct entity *e, struct intersection *it)
 {
+	assert(e->type == ENT_SPHERE);
+	struct sphere *s = &e->u.s;
+
 	/* Ray must originate outside the sphere. FIXME */
 	assert(vec3_norm(vec3_sub(s->center, r->pos)) > s->radius);
 

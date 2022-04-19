@@ -1,7 +1,10 @@
 #include "entities.h"
 
-int ray_intersects_plane(struct ray *r, struct plane *p, struct intersection *it)
+int ray_intersects_plane(struct ray *r, struct entity *e, struct intersection *it)
 {
+	assert(e->type == ENT_PLANE);
+	struct plane *p = &e->u.p;
+
 	float divisor = vec3_dot(r->dir, p->normal);
 	if (divisor >= 0)
 		return 0;

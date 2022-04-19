@@ -9,9 +9,9 @@
 #include "ray.h"
 
 struct entity scene[] = {
-	{.type=ENT_SPHERE, .u={.s={.center={.x=0, .y=0, .z=6}, .radius=1}}, .color={0, 0, 1}},
-	{.type=ENT_SPHERE, .u={.s={.center={.x=0.2, .y=0.2, .z=.5}, .radius=.2}}, .color={0, 1, 0}},
-	{.type=ENT_PLANE, .u={.p={.p0={.x=0, .y=-1, .z=0}, .normal={.x=0, .y=1, .z=0}}}, .color={0.977, 0.627, 0.392}},
+	ENTITY_SPHERE(vec3_new(0, 0, 6), 1, vec3_new(0, 0, 1)),
+	ENTITY_SPHERE(vec3_new(0.2, 0.2, .5), .2, vec3_new(0, 1, 0)),
+	ENTITY_PLANE(vec3_new(0, -1, 0), vec3_new(0, 1, 0), vec3_new(0.977, 0.627, 0.392)),
 };
 
 struct light lights[] = {
@@ -33,19 +33,9 @@ int cast_ray(struct ray *r, float limit, struct intersection *nearest_inter)
 
 	size_t nr_entities = sizeof(scene) / sizeof(scene[0]);
 	for (int i = 0; i < nr_entities; i++) {
-		int intersects;
+		struct entity *e = &scene[i];
 		struct intersection this_inter;
-		switch (scene[i].type) {
-		case ENT_SPHERE:
-			intersects = ray_intersects_sphere(r, &scene[i].u.s, &this_inter);
-			break;
-		case ENT_PLANE:
-			intersects = ray_intersects_plane(r, &scene[i].u.p, &this_inter);
-			break;
-		default:
-			die("unknown type %d", scene[i].type);
-		}
-		if (!intersects || this_inter.dist > limit)
+		if (!e->ray_intersects(r, e, &this_inter) || this_inter.dist > limit)
 			continue;
 		if (!nearest_inter)
 			return 1;
