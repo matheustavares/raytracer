@@ -10,10 +10,10 @@
 #include "lib/array.h"
 
 struct entity scene[] = {
-	ENTITY_SPHERE(vec3_new(-3, 0, 6), 1, MAT_GLOSSY(vec3_new(0, .5, .5))),
-	ENTITY_SPHERE(vec3_new(0, 0, 6), 1, MAT_MATTE(vec3_new(0, 0, 1))),
-	ENTITY_SPHERE(vec3_new(0.2, 0.2, .5), .2, MAT_MATTE(vec3_new(0, 1, 0))),
-	ENTITY_PLANE(vec3_new(0, -1, 0), vec3_new(0, 1, 0), MAT_MATTE(vec3_new(0.977, 0.627, 0.392))),
+	ENTITY_SPHERE(vec3_new(-3, 0, 6), 1, MAT_REFLECTIVE(vec3_new(0, .5, .5), 0.5)),
+	ENTITY_SPHERE(vec3_new(0, 0, 6), 1, MAT_REFLECTIVE(vec3_new(0, 0, 1), 0.5)),
+	ENTITY_SPHERE(vec3_new(0.2, 0.2, .5), .2, MAT_REFLECTIVE(vec3_new(0, 1, 0), 0.5)),
+	ENTITY_PLANE(vec3_new(0, -1, 0), vec3_new(0, 1, 0), MAT_REFLECTIVE(vec3_new(0.977, 0.627, 0.392), 0.5)),
 };
 
 struct light lights[] = {
@@ -21,6 +21,8 @@ struct light lights[] = {
 };
 
 struct vec3 background_color = {.24, .24, .24};
+
+#define RAY_RECUSION_LIMIT 4
 
 /*
  * Returns 1 if the ray intersect any scene object or 0 otherwise.  If
@@ -48,13 +50,19 @@ int cast_ray(struct ray *r, float limit, struct intersection *nearest_it)
 	return ret;
 }
 
+void cast_ray_and_color_pixel(struct ray *r, struct vec3 *color,
+			      int recursion_limit);
+
 #define AMBIENT_LIGHT_INTENSITY 0.08
 
-struct vec3 intersection_color(struct intersection *it, struct vec3 cam_dir)
+struct vec3 intersection_color(struct intersection *it, struct vec3 ray_dir,
+			       int recursion_limit)
 {
 	float diffuse_light_intensity = AMBIENT_LIGHT_INTENSITY;
 	float specular_light_intensity = 0;
 	struct material *material = &it->entity->material;
+	struct vec3 reflect_color;
+	int reflected = 0;
 
 	for (int i = 0; i < ARRAY_SIZE(lights); i++) {
 		struct light *l = &lights[i];
@@ -67,6 +75,15 @@ struct vec3 intersection_color(struct intersection *it, struct vec3 cam_dir)
 		if (cast_ray(&shadow_ray, light_dist, NULL))
 			continue;
 
+		/* Reflection */
+		if (recursion_limit && material->reflectiveness) {
+			struct vec3 reflect_dir = vec3_reflect(ray_dir, it->normal);
+			struct ray reflect_ray = ray_new(displaced_it_pos, reflect_dir);
+			cast_ray_and_color_pixel(&reflect_ray, &reflect_color,
+						 recursion_limit - 1);
+			reflected = 1;
+		}
+
 		/*
 		 * If the dot product is below zero it means the angle is
 		 * above 90°, so the light is hitting the back of the object.
@@ -76,9 +93,12 @@ struct vec3 intersection_color(struct intersection *it, struct vec3 cam_dir)
 				 it->normal));
 
 		/* Specular component */
+		/*
+		 * TODO: should really use vec3_smul(ray_dir, -1)?
+		 */
 		float specular_light_incidence = max(0, vec3_dot(
 			vec3_normalize(vec3_reflect(vec3_smul(it_to_light_dir, -1), it->normal)),
-			vec3_normalize(cam_dir)));
+			vec3_normalize(vec3_smul(ray_dir, -1))));
 
 		specular_light_intensity +=
 			powf(specular_light_incidence * l->intensity,
@@ -95,14 +115,20 @@ struct vec3 intersection_color(struct intersection *it, struct vec3 cam_dir)
 		vec3_smul((struct vec3){1, 1, 1},
 			  specular_light_intensity * material->specular_constant);
 
-	return vec3_add(diffuse_color, specular_color);
+	struct vec3 this_color = vec3_add(diffuse_color, specular_color);
+
+	if (reflected)
+		return vec3_add(vec3_smul(this_color, 1 - material->reflectiveness),
+				vec3_smul(reflect_color, material->reflectiveness));
+	return this_color;
 }
 
-void cast_ray_and_color_pixel(struct ray *r, struct vec3 *color)
+void cast_ray_and_color_pixel(struct ray *r, struct vec3 *color,
+			      int recursion_limit)
 {
 	struct intersection it;
 	if (cast_ray(r, INFINITY, &it))
-		*color = intersection_color(&it, vec3_smul(r->dir, -1));
+		*color = intersection_color(&it, r->dir, recursion_limit);
 	else
 		*color = background_color;
 }
@@ -151,7 +177,7 @@ int main(int argc, char **argv)
 				struct ray r = ray_new(vec3_new(0, 0, 0),
 						       vec3_new(x, y, 1));
 #endif
-				cast_ray_and_color_pixel(&r, color);
+				cast_ray_and_color_pixel(&r, color, RAY_RECUSION_LIMIT);
 			}
 			*ppm_color(ppm, i, j) = color_average(samples, NR_SAMPLES);
 		}

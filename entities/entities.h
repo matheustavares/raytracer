@@ -19,7 +19,7 @@ struct light {
 
 struct material {
 	struct vec3 color;
-	float shininess;
+	float shininess, reflectiveness;
 	float diffuse_constant, specular_constant;
 };
 
@@ -28,6 +28,10 @@ struct material {
 	 .specular_constant=1, .shininess=400}
 
 #define MAT_MATTE(color_v) {.color=color_v, .diffuse_constant=1}
+
+#define MAT_REFLECTIVE(color_v, ref) \
+	{.color=color_v, .diffuse_constant=1, .reflectiveness=ref, \
+	 .specular_constant=1, .shininess=800}
 
 typedef int (*ray_intersection_fn)(struct ray *r, struct entity *e,
 				   struct intersection *it);
