@@ -18,6 +18,14 @@ struct entity scene[] = {
 
 struct light lights[] = {
 	{.pos={.x=3, .y=2, .z=-1}, .intensity=1},
+	/*
+	 * NEEDSWORK: I only added this second light because the current shadow
+	 * implementation shuts off the pixels that are not directly visible by
+	 * a light source (i.e. it does not consider any reflection). This
+	 * gives a weird effect on reflective materials. Instead, I think we
+	 * should just darken the pixels, but considering reflectiveness.
+	 */
+	{.pos={.x=0, .y=0, .z=0}, .intensity=.001},
 };
 
 struct vec3 background_color = {.24, .24, .24};
