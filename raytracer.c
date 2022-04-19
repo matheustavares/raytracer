@@ -23,24 +23,24 @@ struct vec3 background_color = {.24, .24, .24};
 
 /*
  * Returns 1 if the ray intersect any scene object or 0 otherwise.  If
- * `nearest_inter` is not NULL, the data for the nearest intersection is saved
+ * `nearest_it` is not NULL, the data for the nearest intersection is saved
  * on it. Otherwise, the function returns early at the first intersection.
  */
-int cast_ray(struct ray *r, float limit, struct intersection *nearest_inter)
+int cast_ray(struct ray *r, float limit, struct intersection *nearest_it)
 {
 	int ret = 0;
-	if (nearest_inter)
-		nearest_inter->dist = INFINITY;
+	if (nearest_it)
+		nearest_it->dist = INFINITY;
 
 	for (int i = 0; i < ARRAY_SIZE(scene); i++) {
 		struct entity *e = &scene[i];
-		struct intersection this_inter;
-		if (!e->ray_intersects(r, e, &this_inter) || this_inter.dist > limit)
+		struct intersection this_it;
+		if (!e->ray_intersects(r, e, &this_it) || this_it.dist > limit)
 			continue;
-		if (!nearest_inter)
+		if (!nearest_it)
 			return 1;
-		if (this_inter.dist < nearest_inter->dist) {
-			*nearest_inter = this_inter;
+		if (this_it.dist < nearest_it->dist) {
+			*nearest_it = this_it;
 			ret = 1;
 		}
 	}
@@ -90,13 +90,13 @@ void color_pixel(struct vec3 *color, struct vec3 pos, struct vec3 normal,
 
 void cast_ray_and_color_pixel(struct ray *r, struct vec3 *color)
 {
-	struct intersection inter;
-	if (cast_ray(r, INFINITY, &inter)) {
-		*color = inter.entity->color;
-		color_pixel(color, inter.pos, inter.normal, vec3_smul(r->dir, -1));
-	} else {
-		*color = background_color;
-	}
+        struct intersection it;
+        if (cast_ray(r, INFINITY, &it)) {
+                *color = it.entity->color;
+                color_pixel(color, it.pos, it.normal, vec3_smul(r->dir, -1));
+        } else {
+                *color = background_color;
+        }
 }
 
 /*
