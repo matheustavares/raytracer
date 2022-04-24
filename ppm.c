@@ -2,6 +2,11 @@
 #include "lib/wrappers.h"
 #include "lib/error.h"
 
+/* Produced good results when testing. */
+#define STBIR_DEFAULT_FILTER_UPSAMPLE STBIR_FILTER_TRIANGLE
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "stb/stb_image_resize.h"
+
 static struct vec3 color_float_to_byte(struct vec3 color)
 {
 	return vec3_map(vec3_smul(clamp_color_vec(color), 255), roundf);
@@ -29,6 +34,19 @@ struct ppm *ppm_new(unsigned rows, unsigned cols)
 	ppm->cols = cols;
 	ppm->img = xcalloc(rows * cols, sizeof(*(ppm->img)));
 	return ppm;
+}
+
+void ppm_resize(struct ppm *ppm, unsigned rows, unsigned cols)
+{
+	struct ppm *new = ppm_new(rows, cols);
+	if (!stbir_resize_float((float *)ppm->img, ppm->cols, ppm->rows, 0,
+                                (float *)new->img, new->cols, new->rows, 0, 3))
+		die("failed to resize ppm image");
+	free(ppm->img);
+	ppm->img = new->img;
+	ppm->cols = new->cols;
+	ppm->rows = new->rows;
+	free(new);
 }
 
 unsigned ppm_2d_to_1d(struct ppm *ppm, unsigned i, unsigned j)

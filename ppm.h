@@ -36,3 +36,5 @@ struct vec3 *ppm_color(struct ppm *ppm, unsigned i, unsigned j);
 void ppm_write(struct ppm *ppm, FILE *f);
 
 unsigned ppm_2d_to_1d(struct ppm *ppm, unsigned i, unsigned j);
+
+void ppm_resize(struct ppm *ppm, unsigned rows, unsigned cols);

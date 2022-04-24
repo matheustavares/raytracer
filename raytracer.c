@@ -150,6 +150,11 @@ static void ensure_unit_length_in_scene_normals(void)
 	}
 }
 
+#define ASPECT_RATIO (16.0 / 9.0)
+#define OUTPUT_WIDTH 2048
+#define RENDER_RESOLUTION 0.5 /* ]0,1] */
+#define SAMPLES_PER_PIXEL 4
+
 /*
  * Viewport is centered at 0, 0, 1 and directed towards positive z. The left
  * top corner of the image is the origin (0, 0), and the axis grow towards
@@ -157,12 +162,10 @@ static void ensure_unit_length_in_scene_normals(void)
  */
 int main(int argc, char **argv)
 {
-	float aspect_ratio = 16.0 / 9.0;
-	int W = 2048, H = W / aspect_ratio;
+	int W = OUTPUT_WIDTH * RENDER_RESOLUTION, H = W / ASPECT_RATIO;
 
 	float viewport_W = 2.0;
-	float viewport_H = viewport_W / aspect_ratio;
-	int NR_SAMPLES = 4;
+	float viewport_H = viewport_W / ASPECT_RATIO;
 	float pixel_sz = viewport_W / W;
 
 	ensure_unit_length_in_scene_normals();
@@ -170,10 +173,10 @@ int main(int argc, char **argv)
 	struct ppm *ppm = ppm_new(H, W);
 	for (int i = 0; i < H; i++) {
 		for (int j = 0; j < W; j++) {
-			struct vec3 samples[NR_SAMPLES];
+			struct vec3 samples[SAMPLES_PER_PIXEL];
 			float top_x = -viewport_W/2 + j * pixel_sz;
 			float top_y = viewport_H/2 - i * pixel_sz;
-			for (int s = 0; s < NR_SAMPLES; s++) {
+			for (int s = 0; s < SAMPLES_PER_PIXEL; s++) {
 				struct vec3 *color = &samples[s];
 				float x = rand_in(top_x, top_x + pixel_sz);
 				float y = rand_in(top_y, top_y + pixel_sz);
@@ -187,9 +190,10 @@ int main(int argc, char **argv)
 #endif
 				cast_ray_and_color_pixel(&r, color, RAY_RECUSION_LIMIT);
 			}
-			*ppm_color(ppm, i, j) = color_average(samples, NR_SAMPLES);
+			*ppm_color(ppm, i, j) = color_average(samples, SAMPLES_PER_PIXEL);
 		}
 	}
+	ppm_resize(ppm, OUTPUT_WIDTH / ASPECT_RATIO, OUTPUT_WIDTH);
 	ppm_write(ppm, stdout);
 	ppm_destroy(&ppm);
 	return 0;

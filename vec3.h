@@ -1,7 +1,7 @@
 #pragma once
 #include <math.h>
 
-struct vec3 {
+struct __attribute__((__packed__)) vec3 {
 	float x, y, z;
 };
 
