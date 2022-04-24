@@ -1,5 +1,5 @@
 CC ?= gcc
-CFLAGS := -Wall -O3 -Wno-unused-function $(CFLAGS)
+CFLAGS := -Wall -O3 -Wno-unused-function -fopenmp $(CFLAGS)
 LDFLAGS := -lm
 
 MAIN = raytracer

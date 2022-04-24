@@ -171,6 +171,8 @@ int main(int argc, char **argv)
 	ensure_unit_length_in_scene_normals();
 
 	struct ppm *ppm = ppm_new(H, W);
+
+	#pragma omp parallel for collapse(2)
 	for (int i = 0; i < H; i++) {
 		for (int j = 0; j < W; j++) {
 			struct vec3 samples[SAMPLES_PER_PIXEL];
