@@ -157,11 +157,11 @@ static void ensure_unit_length_in_scene_normals(void)
 #define OUTPUT_WIDTH 2048
 #define RENDER_RESOLUTION 1 /* ]0,1] */
 #define SAMPLES_PER_PIXEL 4
-#define VIEWPOINT_DIST 1.5
+#define VIEWPOINT_DIST 1
 
 void make_scene(void)
 {
-	struct texture_opts opts = {.invert_X = 1, .rotate_X = 2000};
+	struct texture_opts opts = {.rotate_X = -300};
 	struct texture *env = load_texture("neon-studio.jpg", &opts);
 	struct texture *tiles = load_texture("tiles.png", NULL);
 	ADD_ENTITY(ENTITY_SPHERE(vec3_new(-2.5, -.5, 6), 1.2,

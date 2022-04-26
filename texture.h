@@ -6,7 +6,7 @@
 struct texture_opts {
 	int invert_X:1,
 	    invert_Y:1;
-	unsigned rotate_X; /* in pixels */
+	int rotate_X; /* in pixels */
 };
 
 struct texture {
