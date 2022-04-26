@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <math.h>
 #include "entities.h"
 
 /*
@@ -37,4 +38,23 @@ int ray_intersects_sphere(struct ray *r, struct entity *e, struct intersection *
 	} else {
 		return 0;
 	}
+}
+
+struct vec3 lookup_sphere_texture(struct entity *e, struct vec3 pos)
+{
+	assert(e->type == ENT_SPHERE);
+	struct sphere *s = &e->u.s;
+
+	struct texture *texture = e->material.texture;
+	assert(texture);
+
+	struct vec3 normalized_pos = vec3_normalize(vec3_sub(pos, s->center));
+	float u = fmod((atan2f(normalized_pos.z, normalized_pos.x) + M_PI), M_PI) / M_PI;
+	float v = (1 - normalized_pos.y) / 2.0;
+
+	/* Filter method: nearest pixel. */
+	int u_int = fmod(roundf(u * texture->W), texture->W);
+	int v_int = fmod(roundf(v * texture->H), texture->H);
+
+	return texture_color(texture, u_int, v_int);
 }

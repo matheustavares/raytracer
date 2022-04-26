@@ -37,6 +37,11 @@ static inline struct vec3 vec3_sdiv(struct vec3 v, float s)
 	return vec3_smul(v, 1.0/s);
 }
 
+static inline struct vec3 vec3_neg(struct vec3 v)
+{
+	return vec3_smul(v, -1);
+}
+
 static inline struct vec3 vec3_normalize(struct vec3 v)
 {
 	return vec3_sdiv(v, vec3_norm(v));
