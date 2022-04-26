@@ -49,7 +49,14 @@ struct vec3 lookup_sphere_texture(struct entity *e, struct vec3 pos)
 	assert(texture);
 
 	struct vec3 normalized_pos = vec3_normalize(vec3_sub(pos, s->center));
-	float u = fmod((atan2f(normalized_pos.z, normalized_pos.x) + M_PI), M_PI) / M_PI;
+	/*
+	 * The "(atan() + 2*pi) % 2*pi" formula comes from:
+	 * https://stackoverflow.com/a/25725005/11019779
+	 * The idea is to map the atan() values into [0, 2*pi] radians. We need
+	 * the +2*pi because fmod(x, 2*pi) returns negative values for a
+	 * negative x.
+	 */
+	float u = fmod((atan2f(normalized_pos.z, normalized_pos.x) + 2*M_PI), 2*M_PI) / (2*M_PI);
 	float v = (1 - normalized_pos.y) / 2.0;
 
 	/* Filter method: nearest pixel. */
