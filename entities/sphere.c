@@ -60,8 +60,8 @@ struct vec3 lookup_sphere_texture(struct entity *e, struct vec3 pos)
 	float v = (1 - normalized_pos.y) / 2.0;
 
 	/* Filter method: nearest pixel. */
-	int u_int = fmod(roundf(u * texture->W), texture->W);
-	int v_int = fmod(roundf(v * texture->H), texture->H);
+	int u_int = roundf(u * (texture->W - 1));
+	int v_int = roundf(v * (texture->H - 1));
 
 	return texture_color(texture, u_int, v_int);
 }
