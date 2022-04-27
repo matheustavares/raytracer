@@ -75,7 +75,8 @@ struct vec3 intersection_color(struct intersection *it, struct vec3 ray_dir,
 		struct vec3 it_to_light_dir = vec3_normalize(vec3_sub(l->pos, it->pos));
 
 		/* Shadow */
-		struct vec3 displaced_it_pos = vec3_add(it->pos, vec3_smul(it->normal, 1e-3));
+		float displacement = sign(vec3_dot(it_to_light_dir, it->normal)) * 1e-3;
+		struct vec3 displaced_it_pos = vec3_add(it->pos, vec3_smul(it->normal, displacement));
 		struct ray shadow_ray = ray_new(displaced_it_pos, it_to_light_dir);
 		if (cast_ray(&shadow_ray, light_dist, NULL))
 			continue;
@@ -89,11 +90,7 @@ struct vec3 intersection_color(struct intersection *it, struct vec3 ray_dir,
 			reflected = 1;
 		}
 
-		/*
-		 * If the dot product is below zero it means the angle is
-		 * above 90°, so the light is hitting the back of the object.
-		 */
-		diffuse_light_intensity += l->intensity * max(0,
+		diffuse_light_intensity += l->intensity * fabsf(
 			vec3_dot(vec3_normalize(vec3_sub(l->pos, it->pos)),
 				 it->normal));
 
@@ -101,7 +98,7 @@ struct vec3 intersection_color(struct intersection *it, struct vec3 ray_dir,
 		/*
 		 * TODO: should really use vec3_smul(ray_dir, -1)?
 		 */
-		float specular_light_incidence = max(0, vec3_dot(
+		float specular_light_incidence = fabsf(vec3_dot(
 			vec3_normalize(vec3_reflect(vec3_smul(it_to_light_dir, -1), it->normal)),
 			vec3_normalize(vec3_smul(ray_dir, -1))));
 

@@ -1,44 +1,53 @@
 #include <assert.h>
 #include <math.h>
 #include "entities.h"
+#include "../util.h"
 
 /*
- * Algorithm from:
- * http://www.lighthouse3d.com/tutorials/maths/ray-sphere-intersection/
- * Note: this function assumes that the ray does not originate inside the
- * sphere.
+ * Formula from https://www.rose-hulman.edu/class/csse/csse451/examples/notes/present7.pdf#page=2
+ * The variable nomenclature is the same used in that PDF.
+ * With negative distance checking idea from:
+ * https://github.com/ssloy/tinyraytracer/blob/ce6b785 /tinyraytracer.cpp#L67
  */
 int ray_intersects_sphere(struct ray *r, struct entity *e, struct intersection *it)
 {
 	assert(e->type == ENT_SPHERE);
 	struct sphere *s = &e->u.s;
 
-	/* Ray must originate outside the sphere. FIXME */
-	assert(vec3_norm(vec3_sub(s->center, r->pos)) > s->radius);
-
-	float d = vec3_dot(r->dir, vec3_sub(s->center, r->pos));
-	if (d > 0) {
-		struct vec3 proj = vec3_add(r->pos,
-				vec3_smul(r->dir, d / vec3_norm(r->dir)));
-		float dist = vec3_norm(vec3_sub(proj, s->center));
-		if (dist > s->radius)
-			return 0;
-		if (dist == s->radius) {
-			it->pos = proj;
-			it->dist = vec3_norm(vec3_sub(proj, r->pos));
-		} else {
-			float n = vec3_norm(vec3_sub(proj, s->center));
-			it->dist = vec3_norm(vec3_sub(proj, r->pos)) -
-					sqrt(s->radius * s->radius - n * n);
-			it->pos = vec3_add(r->pos, vec3_smul(r->dir, it->dist));
-		}
-		it->normal = vec3_normalize(vec3_sub(it->pos, s->center));
-		it->entity = e;
-		return 1;
-	} else {
+	struct vec3 ec = vec3_sub(s->center, r->pos);
+	float ec_dot_d = vec3_dot(ec, r->dir);
+	float det = square(s->radius) - vec3_square(ec) + square(ec_dot_d);
+	if (det < 0)
 		return 0;
-	}
+
+	float sqrt_det = sqrt(det);
+	float dist1 = ec_dot_d - sqrt_det;
+	float dist2 = ec_dot_d + sqrt_det;
+
+	/*
+	 * If the distance is negative, it means the ray intersects the sphere
+	 * if "going backwards". We do not want to consider such intersections. 
+	 * 
+	 * Furthermore, it may seem like a desirable optimization to only check
+	 * the first point (... - sqrt(...)), since it should always be smaller
+	 * than the second one. However, consider the case where the ray
+	 * originates inside the sphere. The first point would be a "backwards"
+	 * intersection, but the second will be a valid forward intersection.
+	 * So we must check both.
+	 */
+	if (dist1 > 0)
+		it->dist = dist1;
+	else if (dist2 > 0)
+		it->dist = dist2;
+	else
+		return 0;
+
+	it->pos = vec3_add(r->pos, vec3_smul(r->dir, it->dist));
+	it->normal = vec3_normalize(vec3_sub(it->pos, s->center));
+	it->entity = e;
+	return 1;
 }
+
 
 struct vec3 lookup_sphere_texture(struct entity *e, struct vec3 pos)
 {

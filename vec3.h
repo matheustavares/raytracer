@@ -22,6 +22,11 @@ static inline float vec3_dot(struct vec3 v, struct vec3 u)
 	return v.x * u.x + v.y * u.y + v.z * u.z;
 }
 
+static inline float vec3_square(struct vec3 v)
+{
+	return vec3_dot(v, v);
+}
+
 static inline float vec3_norm(struct vec3 v)
 {
 	return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
