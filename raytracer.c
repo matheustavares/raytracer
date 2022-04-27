@@ -22,7 +22,7 @@ struct light lights[] = {
 	 * gives a weird effect on reflective materials. Instead, I think we
 	 * should just darken the pixels, but considering reflectiveness.
 	 */
-	{.pos={.x=0, .y=0, .z=0}, .intensity=.001},
+	{.pos={.x=0, .y=0, .z=0}, .intensity=1},
 };
 
 struct vec3 background_color = {.24, .24, .24};
