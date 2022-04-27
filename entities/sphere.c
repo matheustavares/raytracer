@@ -43,7 +43,11 @@ int ray_intersects_sphere(struct ray *r, struct entity *e, struct intersection *
 		return 0;
 
 	it->pos = vec3_add(r->pos, vec3_smul(r->dir, it->dist));
-	it->normal = vec3_normalize(vec3_sub(it->pos, s->center));
+	/* Is the ray intersecting from inside or outside? */
+	if (vec3_norm(ec) > s->radius)
+		it->normal = vec3_normalize(vec3_sub(it->pos, s->center));
+	else
+		it->normal = vec3_normalize(vec3_sub(s->center, it->pos));
 	it->entity = e;
 	return 1;
 }
