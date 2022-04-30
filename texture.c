@@ -13,10 +13,16 @@
 static struct texture *textures;
 size_t nr_textures, alloc_textures;
 
-/* https://stackoverflow.com/a/59774898/11019779 */
 static void load_texture_img(const char *filename, struct texture *texture)
 {
 	int channels;
+	/*
+	 * Using stbi_loadf() may seem like a better idea instead of manually
+	 * dividing by 255 down below. However, this function uses gamma
+	 * correction, which will make the image darker if the file is not
+	 * appropriated for it. For a more complete explanation see:
+	 * https://stackoverflow.com/a/59774898/11019779
+	 */
 	unsigned char *img = stbi_load(filename, &texture->W, &texture->H,
 				       &channels, 0);
 	if (!img)
