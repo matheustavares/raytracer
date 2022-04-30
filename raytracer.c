@@ -73,6 +73,10 @@ struct vec3 intersection_color(struct intersection *it, struct vec3 ray_dir,
 		struct vec3 it_to_light_dir = vec3_normalize(vec3_sub(l->pos, it->pos));
 
 		/* Shadow */
+		/*
+		 * Note: we displace the origin of the ray to avoid intersecting
+		 * with the origin point itself.
+		 */
 		float displacement = sign(vec3_dot(it_to_light_dir, it->normal)) * 1e-3;
 		struct vec3 displaced_it_pos = vec3_add(it->pos, vec3_smul(it->normal, displacement));
 		struct ray shadow_ray = ray_new(displaced_it_pos, it_to_light_dir);
