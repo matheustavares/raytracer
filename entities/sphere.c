@@ -6,8 +6,8 @@
 /*
  * Formula from https://www.rose-hulman.edu/class/csse/csse451/examples/notes/present7.pdf#page=2
  * The variable nomenclature is the same used in that PDF.
- * With negative distance checking idea from:
- * https://github.com/ssloy/tinyraytracer/blob/ce6b785 /tinyraytracer.cpp#L67
+ * The negative distance checking comes from:
+ * https://github.com/ssloy/tinyraytracer/blob/ce6b785/tinyraytracer.cpp#L67
  */
 int ray_intersects_sphere(struct ray *r, struct entity *e, struct intersection *it)
 {
