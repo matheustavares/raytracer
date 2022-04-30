@@ -25,8 +25,6 @@ struct light lights[] = {
 	{.pos={.x=0, .y=0, .z=0}, .intensity=1},
 };
 
-struct vec3 background_color = {.24, .24, .24};
-
 #define RAY_RECUSION_LIMIT 4
 
 /*
