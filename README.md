@@ -16,9 +16,9 @@ Currently, the program takes no arguments and outputs the image directly
 to `stdout` (in PPM format).
 
 ```bash
-	$ git clone --recurse-submodules # required for the libs
-	$ make
-	$ ./raytracer >out.ppm # or ./raytracer | display
+$ git clone --recurse-submodules # required for the libs
+$ make
+$ ./raytracer >out.ppm # or ./raytracer | display
 ```
 
 You can change the rendering parameters at `config.h`.
