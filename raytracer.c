@@ -9,6 +9,7 @@
 #include "ray.h"
 #include "lib/array.h"
 #include "texture.h"
+#include "config.h"
 
 ARRAY(struct entity) scene;
 #define ADD_ENTITY(e) ARRAY_APPEND(&scene, (e));
@@ -24,8 +25,6 @@ struct light lights[] = {
 	 */
 	{.pos={.x=0, .y=0, .z=0}, .intensity=1},
 };
-
-#define RAY_RECUSION_LIMIT 4
 
 /*
  * Returns 1 if the ray intersect any scene object or 0 otherwise.  If
@@ -55,8 +54,6 @@ int cast_ray(struct ray *r, float limit, struct intersection *nearest_it)
 
 void cast_ray_and_color_pixel(struct ray *r, struct vec3 *color,
 			      int recursion_limit);
-
-#define AMBIENT_LIGHT_INTENSITY 0.08
 
 struct vec3 intersection_color(struct intersection *it, struct vec3 ray_dir,
 			       int recursion_limit)
@@ -152,12 +149,6 @@ static void ensure_unit_length_in_scene_normals(void)
 	}
 }
 
-#define ASPECT_RATIO (16.0 / 9.0)
-#define OUTPUT_WIDTH 2048
-#define RENDER_RESOLUTION 1 /* ]0,1] */
-#define SAMPLES_PER_PIXEL 4
-#define VIEWPOINT_DIST 1
-
 void make_scene(void)
 {
 	struct texture_opts opts = {.rotate_X = -300};
@@ -201,7 +192,7 @@ int main(int argc, char **argv)
 				float x = rand_in(top_x, top_x + pixel_sz);
 				float y = rand_in(top_y, top_y + pixel_sz);
 
-#ifdef CAN_PROJ_ORTO
+#if CAN_PROJ_ORTO == 1
 				struct ray r = ray_new(vec3_new(x, y, 0),
 						       vec3_new(0, 0, VIEWPOINT_DIST));
 #else
