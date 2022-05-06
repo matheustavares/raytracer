@@ -175,13 +175,14 @@ int main(int argc, char **argv)
 	float viewport_W = 2.0;
 	float viewport_H = viewport_W / ASPECT_RATIO;
 	float pixel_sz = viewport_W / W;
+	unsigned int rand_state = 0;
 
 	fprintf(stderr, "Loading resources...\n");
 	make_scene();
 	struct ppm *ppm = ppm_new(H, W);
 
 	fprintf(stderr, "Casting rays...\n");
-	#pragma omp parallel for collapse(2)
+	#pragma omp parallel for collapse(2) private(rand_state)
 	for (int i = 0; i < H; i++) {
 		for (int j = 0; j < W; j++) {
 			struct vec3 samples[SAMPLES_PER_PIXEL];
@@ -189,8 +190,8 @@ int main(int argc, char **argv)
 			float top_y = viewport_H/2 - i * pixel_sz;
 			for (int s = 0; s < SAMPLES_PER_PIXEL; s++) {
 				struct vec3 *color = &samples[s];
-				float x = rand_in(top_x, top_x + pixel_sz);
-				float y = rand_in(top_y, top_y + pixel_sz);
+				float x = rand_r_in(&rand_state, top_x, top_x + pixel_sz);
+				float y = rand_r_in(&rand_state, top_y, top_y + pixel_sz);
 
 #if CAN_PROJ_ORTO == 1
 				struct ray r = ray_new(vec3_new(x, y, 0),

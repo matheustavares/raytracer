@@ -16,7 +16,12 @@
 		_a * _a; \
 })
 
-static inline float rand_in(float a, float b)
+
+  int rand_r(unsigned int *seedp);
+       void srand(unsigned int seed);
+
+
+static inline float rand_r_in(unsigned int *state, float a, float b)
 {
-	return a + (((float)rand() / RAND_MAX) * (b - a));
+	return a + (((float)rand_r(state) / RAND_MAX) * (b - a));
 }
