@@ -1,6 +1,6 @@
 CC ?= gcc
 CFLAGS := -Wall -O3 -Wno-unused-function -fopenmp $(CFLAGS)
-LDFLAGS := -lm
+LDFLAGS := -lm $(LDFLAGS)
 
 MAIN = raytracer
 HEADERS = $(wildcard *.h entities/*.h lib/*.h)
